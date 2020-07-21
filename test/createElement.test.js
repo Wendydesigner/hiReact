@@ -1,7 +1,7 @@
-import {ToyReact} from '../toyReact.js';
+import {HiReact} from '../hiReact.js';
 
 test('should origin dom render ok', () => {
-    let element = ToyReact.createElement('div', {
+    let element = HiReact.createElement('div', {
         class: 'c-title'
     }, "123");
     expect(element.innerHTML).toBe('123');

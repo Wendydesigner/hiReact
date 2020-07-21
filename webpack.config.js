@@ -35,7 +35,7 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            title: 'ToyReact'
+            title: 'HiReact'
         })
     ],
     optimization: {
