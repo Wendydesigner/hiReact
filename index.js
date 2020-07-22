@@ -1,4 +1,4 @@
-import { HiReact,Component } from './hiReact.js';
+import { HiReact,HiComponent } from './hiReact.js';
 
 // function HiComponent(){
 //     return (
@@ -6,11 +6,13 @@ import { HiReact,Component } from './hiReact.js';
 //     )
 // }
 
-class HiComponentMore {
+class HiComponentMore extends HiComponent{
     render() {
         return (
-            <div class="c-component">
-                <span class="c-component-slot">I am HiComponent {true}</span>
+            <div hiProps={this.props} class="c-component">
+                <span class="c-component-slot"> I am HiComponent {true} 
+                </span>
+                {this.children}
             </div>
         )
     }
@@ -18,12 +20,12 @@ class HiComponentMore {
 
 const originDom = (
     <div class="c-title">
-        <span>123</span>
-        <span class="c-span">123</span>
+        <span> 123</span>
+        <span class="c-span"> 123</span>
         {/* <HiComponent></HiComponent> */}
         <HiComponentMore class="c-component-parent">
-        <div class="c-component-inner">i am slot</div></HiComponentMore>
+        <div class="c-component-inner"> i am slot</div></HiComponentMore>
     </div>
 )
-HiReact.render(originDom, document.body);
+// HiReact.render(originDom, document.body);
 console.log(originDom);
