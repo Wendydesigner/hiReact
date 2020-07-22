@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 module.exports = {
     entry: './index.js',
     output: {
@@ -15,6 +16,10 @@ module.exports = {
                     loader: 'babel-loader'
                 }
             },
+            {
+                test: /\.css$/i,
+                use: [MiniCssExtractPlugin.loader, 'css-loader'],
+            }
         ]
     },
     devServer: {
@@ -36,7 +41,8 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             title: 'HiReact'
-        })
+        }),
+        new MiniCssExtractPlugin()
     ],
     optimization: {
         minimize: false

@@ -1,8 +1,4 @@
-import { eventNames } from "cluster";
 
-class NewElement {
-    constructor() {}
-}
 export class HiComponent {
     constructor() {
         this.children = [];
@@ -12,8 +8,17 @@ export class HiComponent {
         this.props[attr] = value;
     }
     mountTo(parent) {
+        this.parent = parent;
+        this.update();
+    }
+    update() {
+        console.log('before', this.parent);
         let vdom = this.render();
-        parent.appendChild(vdom.root);
+        vdom.mountTo(this.parent,this);
+    }
+    setState(state) {
+        this.state.value = state.value;
+        this.update();
     }
     appendChild(child) {
         this.children.push(child);
@@ -25,14 +30,15 @@ class ElementWrapper {
         this.root = document.createElement(type);
     }
     setAttribute(attr, value) {
-        if (attr == 'hiProps') {
+        if (attr == 'hiClass') {
             for (let parentAttr in value) {
                 this.setAttribute(parentAttr, value[parentAttr])
             }
             this.root.removeAttribute(attr);
-        } else if (attr.match(/^on([\s\S]$)/)) {
-            let eventName = attr.match(/^on([\s\S*]$)/)[1];
-            console.log(eventName);
+        } else if (attr.match(/^on([\s\S]*)/)) {
+            let match = attr.match(/^on([\s\S])([\s\S]*)/);
+            let eventName = match[1].toLowerCase() + match[2];
+            this.root.addEventListener(eventName, value);
         } else {
             let exist = this.root.getAttribute(attr);
             if (exist) {
@@ -43,10 +49,20 @@ class ElementWrapper {
         }
     }
     mountTo(parent) {
-        parent.appendChild(this.root);
+        parent.deleteContents();
+        parent.insertNode(this.root);
+        console.log('after', parent);
     }
     appendChild(child) {
-        child.mountTo(this.root);
+        let range = document.createRange();
+        if (this.root.children.length) {
+            range.setStartAfter(this.root.lastChild);
+            range.setEndAfter(this.root.lastChild);
+        } else {
+            range.setStart(this.root, 0);
+            range.setEnd(this.root, 0);
+        }
+        child.mountTo(range);
     }
 
 }
@@ -56,13 +72,13 @@ class TextWrapper {
         this.root = document.createTextNode(text);
     }
     mountTo(parent) {
-        parent.appendChild(this.root);
+        parent.deleteContents();
+        parent.insertNode(this.root);
     }
 }
 
 export let HiReact = {
     createElement(type, attributes, ...children) {
-        console.log(arguments);
 
         let root;
         if (typeof type == 'function') {
@@ -71,7 +87,6 @@ export let HiReact = {
             root = new ElementWrapper(type);
         }
 
-        console.log(root);
         for (let attr in attributes) {
             let value = attributes[attr];
             root.setAttribute(attr, value);
@@ -93,11 +108,17 @@ export let HiReact = {
             }
         }
         insertChild(children);
-        console.log(root);
         return root;
     },
     render(vdom, element) {
-        // element.appendChild(vdom);
-        vdom.mountTo(element)
+        let range = document.createRange();
+        if (element.children.length) {
+            range.setStartAfter(element.lastChild);
+            range.setEndAfter(element.lastChild);
+        } else {
+            range.setStart(element, 0);
+            range.setEnd(element, 0)
+        }
+        vdom.mountTo(range);
     }
 }
