@@ -1,4 +1,3 @@
-
 export class HiComponent {
     constructor() {
         this.children = [];
@@ -7,14 +6,55 @@ export class HiComponent {
     setAttribute(attr, value) {
         this.props[attr] = value;
     }
+    // get vdom() {
+    //     return this.render().vdom;
+    // }
     mountTo(parent) {
         this.parent = parent;
         this.update();
     }
     update() {
-        console.log('before', this.parent);
         let vdom = this.render();
-        vdom.mountTo(this.parent,this);
+        if (this.oldVdom) {
+            let isSameNode = (node1, node2) => {
+                if (node1.type !== node2.type) return false;
+                if (Object.keys(node1.props).length != Object.keys(node2.props).length) return false;
+                for (let attr in node1.props) {
+                    if (typeof node1.props[attr] == 'function' 
+                    && typeof node2.props[attr] == 'function' 
+                    && node2.props[attr].toString() == node1.props[attr].toString()
+                    ) continue
+                    if (typeof node1.props[attr] == 'object' 
+                    && typeof node2.props[attr] == 'object' 
+                    && JSON.stringify(node2.props[attr]) == JSON.stringify(node1.props[attr])
+                    ) continue
+                    if (node1.props[attr] != node2.props[attr]) return false;
+                }
+                return true;
+            }
+            let isSameTree = (tree1, tree2) => {
+                if (!isSameNode(tree1, tree2)) return false;
+                for (let i = 0; i < tree1.children.length;i++) {
+                    return isSameNode(tree1.children[i], tree2.children[i]);
+                }
+                return true;
+            }
+            let replaceDom = (newDom, oldDom) => {
+                if (isSameTree(newDom, oldDom)) {
+                    return;
+                } else if (!isSameNode(newDom, oldDom)){
+                    newDom.mountTo(oldDom.parent);
+                } else {
+                    for (let i = 0; i < oldDom.children.length; i++) {
+                        replaceDom(newDom.children[i], oldDom.children[i]);
+                    }
+                }
+            }
+            replaceDom(vdom, this.oldVdom);
+        } else {
+            vdom.mountTo(this.parent);
+        }
+        this.oldVdom = vdom;
     }
     setState(state) {
         this.state.value = state.value;
@@ -27,42 +67,57 @@ export class HiComponent {
 }
 class ElementWrapper {
     constructor(type) {
-        this.root = document.createElement(type);
+        this.type = type;
+        this.children = []
+        this.props = Object.create(null);
     }
+    // get vdom() {
+    //     return this;
+    // }
     setAttribute(attr, value) {
-        if (attr == 'hiClass') {
-            for (let parentAttr in value) {
-                this.setAttribute(parentAttr, value[parentAttr])
-            }
-            this.root.removeAttribute(attr);
-        } else if (attr.match(/^on([\s\S]*)/)) {
-            let match = attr.match(/^on([\s\S])([\s\S]*)/);
-            let eventName = match[1].toLowerCase() + match[2];
-            this.root.addEventListener(eventName, value);
-        } else {
-            let exist = this.root.getAttribute(attr);
-            if (exist) {
-                this.root.setAttribute(attr, `${value} ${exist}`);
-            } else {
-                this.root.setAttribute(attr, value);
-            }
-        }
+        this.props[attr] = value;
     }
     mountTo(parent) {
         parent.deleteContents();
-        parent.insertNode(this.root);
-        console.log('after', parent);
+        let element = document.createElement(this.type);
+
+        for (let attr in this.props) {
+            let value = this.props[attr];
+            if (attr == 'hiClass') {
+                for (let parentAttr in value) {
+                    this.setAttribute(parentAttr, value[parentAttr])
+                }
+                element.removeAttribute(attr);
+            } else if (attr.match(/^on([\s\S]*)/)) {
+                let match = attr.match(/^on([\s\S])([\s\S]*)/);
+                let eventName = match[1].toLowerCase() + match[2];
+                element.addEventListener(eventName, value);
+            } else {
+                let exist = element.getAttribute(attr);
+                if (exist) {
+                    element.setAttribute(attr, `${value} ${exist}`);
+                } else {
+                    element.setAttribute(attr, value);
+                }
+            }
+        }
+
+        for (let child of this.children) {
+            let range = document.createRange();
+            if (element.children.length) {
+                range.setStartAfter(element.lastChild);
+                range.setEndAfter(element.lastChild);
+            } else {
+                range.setStart(element, 0);
+                range.setEnd(element, 0);
+            }
+            child.mountTo(range);
+        }
+        
+        parent.insertNode(element);
     }
     appendChild(child) {
-        let range = document.createRange();
-        if (this.root.children.length) {
-            range.setStartAfter(this.root.lastChild);
-            range.setEndAfter(this.root.lastChild);
-        } else {
-            range.setStart(this.root, 0);
-            range.setEnd(this.root, 0);
-        }
-        child.mountTo(range);
+        this.children.push(child);
     }
 
 }
@@ -70,8 +125,19 @@ class ElementWrapper {
 class TextWrapper {
     constructor(text) {
         this.root = document.createTextNode(text);
+        this.children = [];
+        this.type = "#textType";
+        this.props = Object.create(null);
+    }
+    get vdom() {
+        return {
+            type: this.type,
+            props: this.props,
+            children: []
+        }
     }
     mountTo(parent) {
+        this.parent = parent;
         parent.deleteContents();
         parent.insertNode(this.root);
     }
