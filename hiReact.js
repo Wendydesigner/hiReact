@@ -6,24 +6,25 @@ export class HiComponent {
     setAttribute(attr, value) {
         this.props[attr] = value;
     }
-    // get vdom() {
-    //     return this.render().vdom;
-    // }
     mountTo(parent) {
         this.parent = parent;
         this.update();
     }
     update() {
+
+        let placeholder = document.createComment('placeholder');
+        let range = document.createRange();
+        range.setStart(this.parent.endContainer, this.parent.endOffset);
+        range.setEnd(this.parent.endContainer, this.parent.endOffset);
+        range.insertNode(placeholder);
+        this.parent.deleteContents();
+
         let vdom = this.render();
         if (this.oldVdom) {
             let isSameNode = (node1, node2) => {
                 if (node1.type !== node2.type) return false;
                 if (Object.keys(node1.props).length != Object.keys(node2.props).length) return false;
                 for (let attr in node1.props) {
-                    if (typeof node1.props[attr] == 'function' 
-                    && typeof node2.props[attr] == 'function' 
-                    && node2.props[attr].toString() == node1.props[attr].toString()
-                    ) continue
                     if (typeof node1.props[attr] == 'object' 
                     && typeof node2.props[attr] == 'object' 
                     && JSON.stringify(node2.props[attr]) == JSON.stringify(node1.props[attr])
@@ -71,14 +72,12 @@ class ElementWrapper {
         this.children = []
         this.props = Object.create(null);
     }
-    // get vdom() {
-    //     return this;
-    // }
     setAttribute(attr, value) {
         this.props[attr] = value;
     }
     mountTo(parent) {
         parent.deleteContents();
+        this.parent = parent;
         let element = document.createElement(this.type);
 
         for (let attr in this.props) {
@@ -155,7 +154,7 @@ export let HiReact = {
 
         for (let attr in attributes) {
             let value = attributes[attr];
-            root.setAttribute(attr, value);
+            root.props[attr] = value;
         }
 
         function insertChild(children) {
@@ -186,5 +185,6 @@ export let HiReact = {
             range.setEnd(element, 0)
         }
         vdom.mountTo(range);
+        return element;
     }
 }

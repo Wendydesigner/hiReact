@@ -5,7 +5,7 @@ describe('should origin dom ok', ()=> {
         let element = HiReact.createElement('div', {
             class: 'c-title'
         }, "123");
-        expect(element.root.innerHTML).toBe('123');
+        expect(HiReact.render(element, document.createElement('div')).innerHTML).toContain('123');
     });
     
     it('orgin dom with childrenNode', () => {
@@ -15,6 +15,6 @@ describe('should origin dom ok', ()=> {
                 <span class="c-span">123</span>
             </div>
         );
-        expect(element.root.children.length).toBe(2);
+        expect(HiReact.render(element, document.createElement('div')).innerHTML).toContain('123');
     })
 })

@@ -87,7 +87,6 @@ class Square extends HiComponent {
     }
   }
   
-  // ========================================
   
 HiReact.render(
     <Game/>,
