@@ -1,4 +1,4 @@
-# hiReact
+# miniReact
 Learning the back of React 
 
 ## 实现points
